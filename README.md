@@ -3,6 +3,7 @@ ColorSphere — Neon Music Visualizer
 <img width="976" height="728" alt="ColorSphere Music Visualizer002" src="https://github.com/user-attachments/assets/dfcdb922-0eff-4c96-b080-9e6a03f3969b" />
 
 Live Demo:https://meganlovlatte.github.io/colorsphere-music-visualizer/
+
 A vibrant, multi-model music visualizer that transforms audio into explosive spherical art. Upload any audio file and watch as frequency bands create stunning visual patterns with 6 different color modes.
 
 ✨ Features
