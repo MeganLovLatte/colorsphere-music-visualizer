@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ColorSphere — Enhanced Music Mapper</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            align-items: start;
+        }
+        
+        .controls {
+            background: #f7fafc;
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        
+        .control-group input[type="file"],
+        .control-group input[type="range"],
+        .control-group input[type="number"],
+        .control-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .control-group input[type="range"] {
+            height: 8px;
+            background: #e2e8f0;
+            outline: none;
+            border-radius: 4px;
+        }
+        
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .output-section {
+            text-align: center;
+        }
+        
+        #canvas {
+            max-width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        .info-box {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .swatches {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .swatch {
+            width: 50px;
+            height: 30px;
+            border-radius: 6px;
+            border: 2px solid #333;
+            display: inline-block;
+        }
+        
+        .range-value {
+            color: #667eea;
+            font-weight: 600;
+            float: right;
+        }
+        
+        .status {
+            text-align: center;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+            background: #e6fffa;
+            border: 1px solid #38b2ac;
+            color: #234e52;
+        }
+        
+        .status.error {
+            background: #fed7d7;
+            border-color: #e53e3e;
+            color: #742a2a;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ColorSphere</h1>
+        <p class="subtitle">Enhanced Music Mapper — Real audio analysis with smooth color blends. Each ring encodes a time slice with rich frequency-based colors.</p>
+        
+        <div class="main-content">
+            <div class="controls">
+                <div class="control-group">
+                    <label for="audioFile">Audio File (mp3/wav/ogg/m4a)</label>
+                    <input type="file" id="audioFile" accept="audio/*">
+                </div>
+                
+                <div class="control-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="usePreset" checked>
+                        <label for="usePreset">Use preset: Take Five (Cool Jazz 5/4)</label>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label for="colorMode">Color Mode</label>
+                    <select id="colorMode">
+                        <option value="neon_citrus" selected>Neon Citrus Explosion</option>
+                        <option value="electric_burst">Electric Burst</option>
+                        <option value="psychedelic_mix">Psychedelic Multi-Mix</option>
+                        <option value="cyber_punk">Cyber Punk</option>
+                        <option value="plasma_storm">Plasma Storm</option>
+                        <option value="rainbow_fractal">Rainbow Fractal</option>
+                        <option value="smooth">Smooth RGB Blend</option>
+                        <option value="binary">Binary RGB (Original)</option>
+                        <option value="hsl">HSL Color Wheel</option>
+                        <option value="fire">Fire Palette</option>
+                        <option value="ocean">Ocean Palette</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="sensitivity">Overall Sensitivity <span class="range-value" id="sensitivityValue">1.0</span></label>
+                    <input type="range" id="sensitivity" min="0.1" max="3.0" step="0.1" value="1.0">
+                </div>
+                
+                <div class="control-group">
+                    <label for="thrLow">Low→R threshold <span class="range-value" id="thrLowValue">0.45</span></label>
+                    <input type="range" id="thrLow" min="0" max="1" step="0.01" value="0.45">
+                </div>
+                
+                <div class="control-group">
+                    <label for="thrMid">Mid→G threshold <span class="range-value" id="thrMidValue">0.50</span></label>
+                    <input type="range" id="thrMid" min="0" max="1" step="0.01" value="0.50">
+                </div>
+                
+                <div class="control-group">
+                    <label for="thrHigh">High→B threshold <span class="range-value" id="thrHighValue">0.55</span></label>
+                    <input type="range" id="thrHigh" min="0" max="1" step="0.01" value="0.55">
+                </div>
+                
+                <div class="control-group">
+                    <label for="rings">Ring count (time slices) <span class="range-value" id="ringsValue">128</span></label>
+                    <input type="range" id="rings" min="32" max="256" step="1" value="128">
+                </div>
+                
+                <div class="control-group">
+                    <label for="resolution">Resolution <span class="range-value" id="resolutionValue">768</span></label>
+                    <input type="range" id="resolution" min="512" max="1024" step="64" value="768">
+                </div>
+                
+                <div class="control-group">
+                    <label for="seed">Seed (optional)</label>
+                    <input type="number" id="seed" placeholder="Enter seed number">
+                </div>
+                
+                <button class="btn" id="analyzeBtn">Analyze & Render</button>
+                <div id="status" class="status" style="display: none;"></div>
+            </div>
+            
+            <div class="output-section">
+                <canvas id="canvas" width="768" height="768"></canvas>
+                
+                <div class="info-box" id="infoBox">
+                    <strong>Audio Analysis:</strong><br>
+                    <span id="audioInfo">Click "Analyze & Render" to generate visualization</span>
+                    <div class="swatches" id="swatches"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let audioContext;
+        let currentAudioBuffer = null;
+        
+        // Initialize Web Audio API
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                return true;
+            } catch (e) {
+                console.error('Web Audio API not supported:', e);
+                return false;
+            }
+        }
+        
+        // Update range value displays
+        function setupRangeUpdates() {
+            const ranges = ['sensitivity', 'thrLow', 'thrMid', 'thrHigh', 'rings', 'resolution'];
+            ranges.forEach(id => {
+                const range = document.getElementById(id);
+                const value = document.getElementById(id + 'Value');
+                range.addEventListener('input', () => {
+                    value.textContent = range.value;
+                });
+            });
+        }
+        
+        // Show status message
+        function showStatus(message, isError = false) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status' + (isError ? ' error' : '');
+            status.style.display = 'block';
+            
+            if (!isError) {
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        // Load and decode audio file
+        async function loadAudioFile(file) {
+            if (!audioContext) {
+                throw new Error('Audio context not initialized');
+            }
+            
+            showStatus('Loading audio file...');
+            
+            const arrayBuffer = await file.arrayBuffer();
+            try {
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                showStatus('Audio loaded successfully!');
+                return audioBuffer;
+            } catch (e) {
+                throw new Error('Failed to decode audio file. Please try a different format.');
+            }
+        }
+        
+        // Analyze audio with frequency bands
+        function analyzeAudioFrequencies(audioBuffer, rings) {
+            const sampleRate = audioBuffer.sampleRate;
+            const channelData = audioBuffer.getChannelData(0); // Use first channel
+            const totalSamples = channelData.length;
+            const duration = totalSamples / sampleRate;
+            
+            // Window size for FFT analysis
+            const windowSize = 2048;
+            const hopSize = Math.floor(totalSamples / rings);
+            
+            const lowBandEnergies = [];
+            const midBandEnergies = [];
+            const highBandEnergies = [];
+            
+            // Frequency band definitions
+            const lowMaxFreq = 250;  // Hz
+            const midMaxFreq = 2000; // Hz
+            const nyquist = sampleRate / 2;
+            
+            for (let i = 0; i < rings; i++) {
+                const startSample = Math.min(i * hopSize, totalSamples - windowSize);
+                const endSample = Math.min(startSample + windowSize, totalSamples);
+                
+                // Extract window of audio data
+                const window = channelData.slice(startSample, endSample);
+                
+                // Pad with zeros if needed
+                const paddedWindow = new Array(windowSize).fill(0);
+                for (let j = 0; j < window.length; j++) {
+                    paddedWindow[j] = window[j];
+                }
+                
+                // Apply Hann window
+                for (let j = 0; j < windowSize; j++) {
+                    paddedWindow[j] *= 0.5 * (1 - Math.cos(2 * Math.PI * j / (windowSize - 1)));
+                }
+                
+                // Simple FFT approximation using frequency analysis
+                const fftData = simpleFFT(paddedWindow);
+                
+                // Calculate band energies
+                const freqBinSize = sampleRate / windowSize;
+                const lowBins = Math.floor(lowMaxFreq / freqBinSize);
+                const midBins = Math.floor(midMaxFreq / freqBinSize);
+                const highBins = Math.floor(windowSize / 2);
+                
+                let lowEnergy = 0, midEnergy = 0, highEnergy = 0;
+                
+                // Low band (20Hz - 250Hz)
+                for (let j = 1; j < lowBins; j++) {
+                    lowEnergy += fftData[j];
+                }
+                
+                // Mid band (250Hz - 2000Hz)
+                for (let j = lowBins; j < midBins; j++) {
+                    midEnergy += fftData[j];
+                }
+                
+                // High band (2000Hz - Nyquist)
+                for (let j = midBins; j < highBins; j++) {
+                    highEnergy += fftData[j];
+                }
+                
+                lowBandEnergies.push(lowEnergy);
+                midBandEnergies.push(midEnergy);
+                highBandEnergies.push(highEnergy);
+            }
+            
+            // Normalize energies
+            function normalize(arr) {
+                const min = Math.min(...arr);
+                const max = Math.max(...arr);
+                return arr.map(x => max > min ? (x - min) / (max - min) : 0);
+            }
+            
+            return [
+                normalize(lowBandEnergies),
+                normalize(midBandEnergies),
+                normalize(highBandEnergies)
+            ];
+        }
+        
+        // Simple FFT approximation (magnitude spectrum)
+        function simpleFFT(data) {
+            const N = data.length;
+            const spectrum = new Array(N / 2);
+            
+            for (let k = 0; k < N / 2; k++) {
+                let real = 0;
+                let imag = 0;
+                
+                for (let n = 0; n < N; n++) {
+                    const angle = -2 * Math.PI * k * n / N;
+                    real += data[n] * Math.cos(angle);
+                    imag += data[n] * Math.sin(angle);
+                }
+                
+                spectrum[k] = Math.sqrt(real * real + imag * imag) / N;
+            }
+            
+            return spectrum;
+        }
+        
+        // Generate Take Five preset data
+        function presetTakeFiveBinary(nFrames = 240) {
+            const t = Array.from({length: nFrames}, (_, i) => i / (nFrames - 1));
+            const beat = t.map(x => Math.sin(2 * Math.PI * 5 * x) * 0.5 + 0.5);
+            
+            const low = t.map((x, i) => 0.5 * beat[i] + 0.5 * (Math.sin(2 * Math.PI * 1.3 * x) * 0.5 + 0.5));
+            const mid = t.map((x, i) => 0.6 * beat[i] + 0.4 * (Math.sin(2 * Math.PI * 2.7 * x + 0.5) * 0.5 + 0.5));
+            const high = t.map((x, i) => 0.5 * beat[i] + 0.5 * (Math.sin(2 * Math.PI * 4.8 * x + 1.0) * 0.5 + 0.5));
+            
+            // Normalize function
+            function norm(arr) {
+                const min = Math.min(...arr);
+                const max = Math.max(...arr);
+                return arr.map(x => max > min ? (x - min) / (max - min) : 0);
+            }
+            
+            return [norm(low), norm(mid), norm(high)];
+        }
+        
+        // Color mapping functions
+        function getColorForEnergies(lowEnergy, midEnergy, highEnergy, colorMode, sensitivity) {
+            // Apply sensitivity boost
+            lowEnergy = Math.min(1, lowEnergy * sensitivity);
+            midEnergy = Math.min(1, midEnergy * sensitivity);
+            highEnergy = Math.min(1, highEnergy * sensitivity);
+            
+            // Complex energy mixing for vibrant effects
+            const totalEnergy = lowEnergy + midEnergy + highEnergy;
+            const energyVariance = Math.abs(lowEnergy - midEnergy) + Math.abs(midEnergy - highEnergy) + Math.abs(highEnergy - lowEnergy);
+            
+            switch (colorMode) {
+                case 'neon_citrus':
+                    // Inspired by the lime green explosion in the image
+                    const citrusIntensity = Math.min(1, totalEnergy * 1.2);
+                    return {
+                        r: Math.floor(Math.min(255, 
+                            lowEnergy * 255 + // Base red from low freq
+                            midEnergy * 150 + // Mid boost
+                            (energyVariance > 0.3 ? 200 : 0) // Neon burst when frequencies clash
+                        )),
+                        g: Math.floor(Math.min(255, 
+                            220 + // Always high green (lime base)
+                            midEnergy * 35 + // Boost for mid freqs
+                            highEnergy * 255 * 0.8 // Electric highlights
+                        )),
+                        b: Math.floor(Math.min(255,
+                            highEnergy * 100 + // Blue undertones
+                            (totalEnergy > 0.7 ? lowEnergy * 200 : 0) + // Purple bursts
+                            energyVariance * 180 // Complexity boost
+                        ))
+                    };
+                    
+                case 'electric_burst':
+                    // Hot pinks and electric blues like the radiating patterns
+                    const burstFactor = Math.sin(totalEnergy * Math.PI * 4) * 0.5 + 0.5;
+                    return {
+                        r: Math.floor(Math.min(255,
+                            255 * Math.pow(lowEnergy + midEnergy * 0.8, 1.5) + // Hot pink base
+                            burstFactor * 100 // Electric pulses
+                        )),
+                        g: Math.floor(Math.min(255,
+                            midEnergy * 80 + // Minimal green
+                            (energyVariance > 0.5 ? 255 : 0) + // Electric green bursts
+                            Math.sin(highEnergy * Math.PI * 2) * 100
+                        )),
+                        b: Math.floor(Math.min(255,
+                            200 + highEnergy * 55 + // Always high blue
+                            lowEnergy * 200 * Math.pow(totalEnergy, 2) // Deep electric blue
+                        ))
+                    };
+                    
+                case 'psychedelic_mix':
+                    // Multi-layered complex mixing like the chaotic brush strokes
+                    const phase1 = Math.sin(lowEnergy * Math.PI * 6) * 0.5 + 0.5;
+                    const phase2 = Math.cos(midEnergy * Math.PI * 4 + 1) * 0.5 + 0.5;
+                    const phase3 = Math.sin(highEnergy * Math.PI * 8 + 2) * 0.5 + 0.5;
+                    
+                    return {
+                        r: Math.floor(Math.min(255,
+                            phase1 * 255 + // Oscillating reds
+                            energyVariance * 200 + // Chaos boost
+                            (totalEnergy > 0.8 ? 150 : 0) // High energy burst
+                        )),
+                        g: Math.floor(Math.min(255,
+                            phase2 * 255 + // Oscillating greens
+                            Math.pow(midEnergy, 0.5) * 200 + // Mid-freq emphasis
+                            phase3 * 100 // Triple-layer mixing
+                        )),
+                        b: Math.floor(Math.min(255,
+                            phase3 * 255 + // Oscillating blues
+                            lowEnergy * highEnergy * 300 + // Cross-frequency mixing
+                            Math.sin(totalEnergy * Math.PI * 10) * 100 // Ultra-complex waves
+                        ))
+                    };
+                    
+                case 'cyber_punk':
+                    // Neon magenta/cyan like cyberpunk aesthetics
+                    const cyber = Math.pow(totalEnergy, 1.8);
+                    return {
+                        r: Math.floor(Math.min(255,
+                            255 * Math.pow(lowEnergy + midEnergy * 0.5, 2) + // Hot magenta
+                            (energyVariance > 0.4 ? 150 : 0) // Neon spikes
+                        )),
+                        g: Math.floor(Math.min(255,
+                            midEnergy * 100 + // Limited green
+                            cyber * 180 + // Cyan highlights
+                            Math.sin(highEnergy * Math.PI * 12) * 75
+                        )),
+                        b: Math.floor(Math.min(255,
+                            180 + highEnergy * 75 + // Always cyan-blue
+                            lowEnergy * midEnergy * 400 // Cross-band electric blue
+                        ))
+                    };
+                    
+                case 'plasma_storm':
+                    // Like plasma or aurora effects with the organic flow
+                    const plasma1 = Math.sin(lowEnergy * Math.PI * 3 + totalEnergy) * 0.5 + 0.5;
+                    const plasma2 = Math.cos(midEnergy * Math.PI * 5 - totalEnergy) * 0.5 + 0.5;
+                    const plasma3 = Math.sin(highEnergy * Math.PI * 7 + energyVariance * 2) * 0.5 + 0.5;
+                    
+                    return {
+                        r: Math.floor(Math.min(255,
+                            plasma1 * 255 + 
+                            Math.pow(totalEnergy, 3) * 200 + // Intense energy = bright plasma
+                            energyVariance * 180
+                        )),
+                        g: Math.floor(Math.min(255,
+                            plasma2 * 255 +
+                            Math.sin(lowEnergy * highEnergy * Math.PI * 4) * 150 +
+                            (totalEnergy > 0.6 ? 200 : 0)
+                        )),
+                        b: Math.floor(Math.min(255,
+                            plasma3 * 255 +
+                            Math.cos(midEnergy * Math.PI * 6) * 200 +
+                            Math.pow(energyVariance, 2) * 255
+                        ))
+                    };
+                    
+                case 'rainbow_fractal':
+                    // Fractal-like rainbow patterns with the complexity of the brush textures
+                    const fractal = Math.sin(totalEnergy * Math.PI * 8) * Math.cos(energyVariance * Math.PI * 6);
+                    const rainbow_r = Math.sin((lowEnergy * 6 + totalEnergy * 2) * Math.PI) * 0.5 + 0.5;
+                    const rainbow_g = Math.sin((midEnergy * 6 + totalEnergy * 2 + 2) * Math.PI) * 0.5 + 0.5;
+                    const rainbow_b = Math.sin((highEnergy * 6 + totalEnergy * 2 + 4) * Math.PI) * 0.5 + 0.5;
+                    
+                    return {
+                        r: Math.floor(Math.min(255, rainbow_r * 255 + fractal * 150 + energyVariance * 100)),
+                        g: Math.floor(Math.min(255, rainbow_g * 255 + fractal * 150 + totalEnergy * 200)),
+                        b: Math.floor(Math.min(255, rainbow_b * 255 + fractal * 150 + Math.pow(highEnergy, 2) * 255))
+                    };
+                
+                // Keep original modes
+                case 'binary':
+                    return {
+                        r: lowEnergy >= 0.45 ? 255 : 0,
+                        g: midEnergy >= 0.50 ? 255 : 0,
+                        b: highEnergy >= 0.55 ? 255 : 0
+                    };
+                    
+                case 'smooth':
+                    return {
+                        r: Math.floor(lowEnergy * 255),
+                        g: Math.floor(midEnergy * 255),
+                        b: Math.floor(highEnergy * 255)
+                    };
+                    
+                case 'hsl':
+                    const hue = (lowEnergy * 120 + midEnergy * 240 + highEnergy * 360) % 360;
+                    const saturation = Math.min(1, (midEnergy + highEnergy) * 0.8 + 0.2);
+                    const lightness = Math.min(1, (lowEnergy + midEnergy + highEnergy) * 0.4 + 0.1);
+                    return hslToRgb(hue / 360, saturation, lightness);
+                    
+                case 'fire':
+                    const intensity = (lowEnergy + midEnergy + highEnergy) / 3;
+                    return {
+                        r: Math.floor(Math.min(255, intensity * 255 + lowEnergy * 100)),
+                        g: Math.floor(Math.min(255, intensity * 200 + midEnergy * 150)),
+                        b: Math.floor(Math.min(100, intensity * 50 + highEnergy * 200))
+                    };
+                    
+                case 'ocean':
+                    return {
+                        r: Math.floor(lowEnergy * 100 + midEnergy * 50),
+                        g: Math.floor(midEnergy * 200 + highEnergy * 100),
+                        b: Math.floor(highEnergy * 255 + lowEnergy * 150)
+                    };
+                    
+                default:
+                    return { r: 0, g: 0, b: 0 };
+            }
+        }
+        
+        // HSL to RGB conversion
+        function hslToRgb(h, s, l) {
+            let r, g, b;
+            
+            if (s === 0) {
+                r = g = b = l;
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1/6) return p + (q - p) * 6 * t;
+                    if (t < 1/2) return q;
+                    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+                
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+            
+            return {
+                r: Math.round(r * 255),
+                g: Math.round(g * 255),
+                b: Math.round(b * 255)
+            };
+        }
+        
+        // Stretch array to target length
+        function stretchArray(arr, targetLength) {
+            if (arr.length === 0) return new Array(targetLength).fill(0);
+            const result = [];
+            for (let i = 0; i < targetLength; i++) {
+                const index = Math.floor((i / (targetLength - 1)) * (arr.length - 1));
+                result.push(arr[index]);
+            }
+            return result;
+        }
+        
+        // Render ColorSphere
+        function renderColorSphere(eLow, eMid, eHigh, rings, resolution, colorMode, sensitivity, seed = null) {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = resolution;
+            canvas.height = resolution;
+            
+            const imageData = ctx.createImageData(resolution, resolution);
+            const data = imageData.data;
+            
+            // Stretch energy arrays to ring count
+            const lowArr = stretchArray(eLow, rings);
+            const midArr = stretchArray(eMid, rings);
+            const highArr = stretchArray(eHigh, rings);
+            
+            const centerX = resolution / 2;
+            const centerY = resolution / 2;
+            const maxRadius = resolution / 2;
+            
+            for (let y = 0; y < resolution; y++) {
+                for (let x = 0; x < resolution; x++) {
+                    const dx = x - centerX;
+                    const dy = y - centerY;
+                    const r = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (r <= maxRadius) {
+                        const ringIndex = Math.min(Math.floor((r / maxRadius) * rings), rings - 1);
+                        
+                        const color = getColorForEnergies(
+                            lowArr[ringIndex],
+                            midArr[ringIndex],
+                            highArr[ringIndex],
+                            colorMode,
+                            sensitivity
+                        );
+                        
+                        // Apply subtle jitter if seed is provided
+                        let jitterFactor = 1.0;
+                        if (seed !== null) {
+                            const jitterSeed = seed + x * 11 + y * 13;
+                            jitterFactor = 1.0 + 0.02 * Math.sin(jitterSeed * 0.01);
+                        }
+                        
+                        const pixelIndex = (y * resolution + x) * 4;
+                        data[pixelIndex] = Math.min(255, Math.max(0, color.r * jitterFactor));     // R
+                        data[pixelIndex + 1] = Math.min(255, Math.max(0, color.g * jitterFactor)); // G
+                        data[pixelIndex + 2] = Math.min(255, Math.max(0, color.b * jitterFactor)); // B
+                        data[pixelIndex + 3] = 255; // A
+                    } else {
+                        // Background (outside sphere) - dark with subtle neon glow
+                        const pixelIndex = (y * resolution + x) * 4;
+                        const distanceFromEdge = r - maxRadius;
+                        const glowFactor = Math.max(0, 1 - Math.abs(distanceFromEdge) / 20);
+                        
+                        data[pixelIndex] = Math.floor(10 + glowFactor * 30);     // R - subtle glow
+                        data[pixelIndex + 1] = Math.floor(5 + glowFactor * 20);  // G
+                        data[pixelIndex + 2] = Math.floor(15 + glowFactor * 40); // B - more blue glow
+                        data[pixelIndex + 3] = 255; // A
+                    }
+                }
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+        }
+        
+        // Generate sample colors
+        function generateSampleColors(eLow, eMid, eHigh, rings, colorMode, sensitivity, samples = 8) {
+            const lowArr = stretchArray(eLow, rings);
+            const midArr = stretchArray(eMid, rings);
+            const highArr = stretchArray(eHigh, rings);
+            
+            const colors = [];
+            for (let i = 0; i < samples; i++) {
+                const index = Math.floor((i / (samples - 1)) * (rings - 1));
+                const color = getColorForEnergies(
+                    lowArr[index],
+                    midArr[index],
+                    highArr[index],
+                    colorMode,
+                    sensitivity
+                );
+                
+                const hex = `#${color.r.toString(16).padStart(2, '0')}${color.g.toString(16).padStart(2, '0')}${color.b.toString(16).padStart(2, '0')}`;
+                colors.push(hex);
+            }
+            return colors;
+        }
+        
+        // Main analysis and render function
+        async function analyzeAndRender() {
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = 'Processing...';
+            
+            try {
+                const usePreset = document.getElementById('usePreset').checked;
+                const colorMode = document.getElementById('colorMode').value;
+                const sensitivity = parseFloat(document.getElementById('sensitivity').value);
+                const rings = parseInt(document.getElementById('rings').value);
+                const resolution = parseInt(document.getElementById('resolution').value);
+                const seedValue = document.getElementById('seed').value;
+                const seed = seedValue ? parseInt(seedValue) : null;
+                
+                let eLow, eMid, eHigh;
+                
+                if (usePreset) {
+                    [eLow, eMid, eHigh] = presetTakeFiveBinary(rings);
+                    showStatus('Using Take Five preset data');
+                } else {
+                    const audioFile = document.getElementById('audioFile').files[0];
+                    if (!audioFile) {
+                        showStatus('Please upload an audio file or use the preset.', true);
+                        return;
+                    }
+                    
+                    if (!audioContext) {
+                        if (!initAudio()) {
+                            showStatus('Web Audio API not supported in this browser.', true);
+                            return;
+                        }
+                    }
+                    
+                    // Resume audio context if needed
+                    if (audioContext.state === 'suspended') {
+                        await audioContext.resume();
+                    }
+                    
+                    currentAudioBuffer = await loadAudioFile(audioFile);
+                    [eLow, eMid, eHigh] = analyzeAudioFrequencies(currentAudioBuffer, rings);
+                    
+                    const duration = currentAudioBuffer.duration.toFixed(1);
+                    showStatus(`Analyzed ${audioFile.name} (${duration}s) successfully!`);
+                }
+                
+                renderColorSphere(eLow, eMid, eHigh, rings, resolution, colorMode, sensitivity, seed);
+                
+                // Update info display
+                const colors = generateSampleColors(eLow, eMid, eHigh, rings, colorMode, sensitivity);
+                const audioInfo = document.getElementById('audioInfo');
+                const swatches = document.getElementById('swatches');
+                
+                audioInfo.innerHTML = `
+                    <strong>Color samples (center→edge):</strong> ${colors.join(' | ')}<br><br>
+                    <strong>Mode:</strong> ${colorMode.charAt(0).toUpperCase() + colorMode.slice(1)}<br>
+                    <strong>Sensitivity:</strong> ${sensitivity}x<br>
+                    <strong>Time slices:</strong> ${rings} rings
+                `;
+                
+                swatches.innerHTML = colors.map(color => 
+                    `<div class="swatch" style="background-color: ${color};"></div>`
+                ).join('');
+                
+            } catch (error) {
+                console.error('Analysis failed:', error);
+                showStatus(`Error: ${error.message}`, true);
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = 'Analyze & Render';
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setupRangeUpdates();
+            initAudio();
+            
+            document.getElementById('analyzeBtn').addEventListener('click', analyzeAndRender);
+            
+            // Auto-update when color mode changes
+            document.getElementById('colorMode').addEventListener('change', () => {
+                if (currentAudioBuffer || document.getElementById('usePreset').checked) {
+                    analyzeAndRender();
+                }
+            });
+            
+            // Generate initial visualization
+            analyzeAndRender();
+        });
+    </script>
+</body>
+</html>
